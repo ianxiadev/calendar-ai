@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal, EventModel, get_db
+from fastapi import HTTPException
 
 class Event(BaseModel): # New class event that inherits from BaseModel, receiving all Pydantic's validation abilities 
     title: str
@@ -27,3 +28,28 @@ def create_event(event: Event, db: Session = Depends(get_db)): # Depends(get_db)
     db.commit()
     db.refresh(new_event) # database fills in detailed you didn't provide such as the auto-generated id number
     return new_event
+
+@app.put("/events/{event_id}")
+def update_event(event_id: int, event: Event, db: Session = Depends(get_db)):
+    db_event = db.query(EventModel).filter(EventModel.id == event_id).first()
+    if db_event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    db_event.title = event.title
+    db_event.start = event.start
+    db_event.end = event.end
+
+    db.commit()
+    db.refresh(db_event)
+    return db_event
+
+@app.delete("/events/{event_id}")
+def delete_event(event_id: int, db: Session = Depends(get_db)):
+    db_event = db.query(EventModel).filter(EventModel.id == event_id).first()
+    if db_event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    event_title = db_event.title
+    db.delete(db_event)
+    db.commit()
+    return {"detail": f"Event '{event_title}' deleted"}
