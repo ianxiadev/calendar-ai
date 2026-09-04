@@ -5,16 +5,17 @@ from sqlalchemy.orm import Session
 from app.db.database import SessionLocal, EventModel, get_db
 from fastapi import HTTPException
 from typing import Optional
+from datetime import datetime
 
 class Event(BaseModel): # New class event that inherits from BaseModel, receiving all Pydantic's validation abilities 
     title: str
-    start: str
-    end: str
+    start: datetime
+    end: datetime
 
 class EventUpdate(BaseModel):
     title: Optional[str] = None
-    start: Optional[str] = None
-    end: Optional[str] = None
+    start: Optional[datetime] = None
+    end: Optional[datetime] = None
 
 
 app = FastAPI() # Create an instance of FastAPI class as object app
@@ -62,7 +63,7 @@ def delete_event(event_id: int, db: Session = Depends(get_db)):
 
 @app.patch("/events/{event_id}")
 def patch_event(event_id: int, event: EventUpdate, db: Session = Depends(get_db)):
-    
+
     db_event = db.query(EventModel).filter(EventModel.id == event_id).first()
     if db_event is None:
         raise HTTPException(status_code=404, detail="Event not found")
